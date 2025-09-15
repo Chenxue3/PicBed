@@ -7,7 +7,7 @@ namespace PicBed.Services
         Task<ImageRecord> UploadImageAsync(IFormFile file, int userId, string? description = null, string? category = null);
         Task<ImageRecord?> GetImageInfoAsync(int id);
         Task<ImageRecord?> GetImageInfoByFileNameAsync(string fileName);
-        Task<List<ImageRecord>> GetImagesAsync(int page = 1, int pageSize = 20, string? category = null);
+        Task<List<ImageRecord>> GetImagesAsync(int page = 1, int pageSize = 20, string? category = null, int? userIdFilter = null);
         Task<bool> DeleteImageAsync(int id);
         Task<Stream?> GetImageStreamAsync(string fileName);
         Task<Stream?> GetThumbnailStreamAsync(string fileName, int width = 200, int height = 200);
