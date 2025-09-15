@@ -86,13 +86,26 @@ A modern, self-hosted image storage and management application built with ASP.NE
 
 ## Deployment
 
-### Railway (Recommended)
+### Render (Recommended - Free)
 
-See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for detailed deployment instructions.
+See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) for detailed deployment instructions.
+
+**Why Render?**
+- ✅ Completely free
+- ✅ Supports .NET 8.0
+- ✅ Automatic deployments
+- ✅ Custom domains
+- ✅ SSL certificates
+
+### Railway
+
+See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for deployment instructions.
+**Note**: Railway's free plan now only supports database deployments. Consider upgrading to Pro plan or using Render instead.
 
 ### Other Platforms
 
 This application can be deployed to any platform that supports .NET 8.0:
+- Fly.io
 - Heroku
 - DigitalOcean App Platform
 - Azure App Service

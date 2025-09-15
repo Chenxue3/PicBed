@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: picbed
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:$PORT
+      - key: ConnectionStrings__DefaultConnection
+        value: Data Source=picbed.db
+      - key: ImageSettings__MaxFileSize
+        value: 10485760
+      - key: ImageSettings__UploadPath
+        value: uploads
+      - key: ImageSettings__ThumbnailPath
+        value: thumbnails
+      - key: ImageSettings__AllowedExtensions__0
+        value: .jpg
+      - key: ImageSettings__AllowedExtensions__1
+        value: .jpeg
+      - key: ImageSettings__AllowedExtensions__2
+        value: .png
+      - key: ImageSettings__AllowedExtensions__3
+        value: .gif
+      - key: ImageSettings__AllowedExtensions__4
+        value: .webp
