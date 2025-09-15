@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  picbed:
+    build: .
+    ports:
+      - "5000:80"
+    volumes:
+      - ./uploads:/app/wwwroot/uploads
+      - ./thumbnails:/app/wwwroot/thumbnails
+      - ./data:/app/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+    restart: unless-stopped
