@@ -111,7 +111,23 @@ namespace PicBed.Controllers
             if (page < 1) page = 1;
             if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
-            var images = await _imageService.GetImagesAsync(page, pageSize, category);
+            // get current user; if admin, see all; else filter by userId
+            int? userIdFilter = null;
+            try
+            {
+                var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                if (!string.IsNullOrEmpty(token))
+                {
+                    var user = await _authService.GetUserByTokenAsync(token);
+                    if (user != null && user.Username != "admin")
+                    {
+                        userIdFilter = user.Id;
+                    }
+                }
+            }
+            catch { }
+
+            var images = await _imageService.GetImagesAsync(page, pageSize, category, userIdFilter);
             return Ok(images);
         }
 
@@ -123,6 +139,31 @@ namespace PicBed.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteImage(int id)
         {
+            // Only owner or admin can delete
+            var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _authService.GetUserByTokenAsync(token);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // Fetch image to check ownership
+            var imageInfo = await _imageService.GetImageInfoAsync(id);
+            if (imageInfo == null)
+            {
+                return NotFound();
+            }
+
+            if (user.Username != "admin" && imageInfo.UserId != user.Id)
+            {
+                return Forbid();
+            }
+
             var success = await _imageService.DeleteImageAsync(id);
             if (!success)
             {

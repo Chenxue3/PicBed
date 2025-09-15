@@ -122,13 +122,19 @@ namespace PicBed.Services
             return await _context.Images.FirstOrDefaultAsync(i => i.FileName == fileName);
         }
 
-        public async Task<List<ImageRecord>> GetImagesAsync(int page = 1, int pageSize = 20, string? category = null)
+        public async Task<List<ImageRecord>> GetImagesAsync(int page = 1, int pageSize = 20, string? category = null, int? userIdFilter = null)
         {
             var query = _context.Images.AsQueryable();
 
             if (!string.IsNullOrEmpty(category))
             {
                 query = query.Where(i => i.Category == category);
+            }
+
+            if (userIdFilter.HasValue)
+            {
+                var filterUserId = userIdFilter.Value;
+                query = query.Where(i => i.UserId == filterUserId);
             }
 
             return await query
