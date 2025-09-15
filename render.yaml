@@ -29,3 +29,11 @@ services:
         value: .webp
       - key: ADMIN_PASSWORD
         value: "your_secure_admin_password_here"
+      - key: AWS__AccessKey
+        value: "your_aws_access_key"
+      - key: AWS__SecretKey
+        value: "your_aws_secret_key"
+      - key: AWS__Region
+        value: "us-east-1"
+      - key: AWS__S3BucketName
+        value: "your-s3-bucket-name"

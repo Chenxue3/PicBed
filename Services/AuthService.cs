@@ -152,16 +152,39 @@ namespace PicBed.Services
         {
             try
             {
+
+                _logger.LogInformation("Attempting to decode token: {Token}", token);
                 var tokenData = DecodeToken(token);
-                if (tokenData == null) return null;
+                if (tokenData == null) 
+                {
+                    _logger.LogWarning("Token decode failed");
+                    return null;
+                }
 
                 var userIdObj = tokenData.GetValueOrDefault("userId", 0);
-                if (userIdObj is not int userId || userId == 0) return null;
+                int userId;
+                
+                if (userIdObj is JsonElement jsonElement)
+                {
+                    userId = jsonElement.GetInt32();
+                }
+                else
+                {
+                    userId = Convert.ToInt32(userIdObj);
+                }
+                
+                if (userId == 0) 
+                {
+                    _logger.LogWarning("Invalid userId in token: {UserId}", userIdObj);
+                    return null;
+                }
 
+                _logger.LogInformation("Token valid, looking up user ID: {UserId}", userId);
                 return await _context.Users.FindAsync(userId);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in GetUserByTokenAsync");
                 return null;
             }
         }
@@ -202,14 +225,22 @@ namespace PicBed.Services
             try
             {
                 var parts = token.Split('.');
-                if (parts.Length != 2) return null;
+                if (parts.Length != 2) 
+                {
+                    _logger.LogWarning("Token has invalid format, expected 2 parts, got {Count}", parts.Length);
+                    return null;
+                }
 
                 var encoded = parts[0];
                 var signature = parts[1];
 
                 // Verify signature
                 var expectedSignature = ComputeSignature(encoded);
-                if (signature != expectedSignature) return null;
+                if (signature != expectedSignature) 
+                {
+                    _logger.LogWarning("Token signature verification failed. Expected: {Expected}, Got: {Actual}", expectedSignature, signature);
+                    return null;
+                }
 
                 var json = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
                 var tokenData = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
@@ -217,17 +248,31 @@ namespace PicBed.Services
                 // Check expiration
                 if (tokenData != null && tokenData.ContainsKey("expiresAt"))
                 {
-                    var expiresAt = Convert.ToInt64(tokenData["expiresAt"]);
+                    var expiresAtValue = tokenData["expiresAt"];
+                    long expiresAt;
+                    
+                    if (expiresAtValue is JsonElement jsonElement)
+                    {
+                        expiresAt = jsonElement.GetInt64();
+                    }
+                    else
+                    {
+                        expiresAt = Convert.ToInt64(expiresAtValue);
+                    }
+                    
                     if (DateTime.UtcNow.Ticks > expiresAt)
                     {
+                        _logger.LogWarning("Token has expired");
                         return null;
                     }
                 }
 
+                _logger.LogInformation("Token decoded successfully");
                 return tokenData;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error decoding token");
                 return null;
             }
         }

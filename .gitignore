@@ -173,8 +173,10 @@ publish/
 # in these files may be visible to others.
 *.azurePubxml
 
-TECHNICAL_DOCUMENTATION.md
+TECH.md
 RAILWAY_DEPLOYMENT.md
+AWS_S3_SETUP.md
+RENDER_DEPLOYMENT.md
 
 # Microsoft Azure Build Output
 csx/
@@ -183,6 +185,8 @@ csx/
 # Microsoft Azure Emulator
 ecf/
 rcf/
+#testing
+appsettings.Development.json
 
 # Windows Store app package directories and files
 AppPackages/

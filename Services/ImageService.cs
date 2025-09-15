@@ -12,17 +12,20 @@ namespace PicBed.Services
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<ImageService> _logger;
+        private readonly IS3StorageService _s3StorageService;
 
         public ImageService(
             PicBedDbContext context,
             IConfiguration configuration,
             IWebHostEnvironment environment,
-            ILogger<ImageService> logger)
+            ILogger<ImageService> logger,
+            IS3StorageService s3StorageService)
         {
             _context = context;
             _configuration = configuration;
             _environment = environment;
             _logger = logger;
+            _s3StorageService = s3StorageService;
         }
 
         public async Task<ImageRecord> UploadImageAsync(IFormFile file, int userId, string? description = null, string? category = null)
@@ -45,52 +48,45 @@ namespace PicBed.Services
 
             // Generate unique filename
             var fileName = $"{Guid.NewGuid()}{fileExtension}";
-            var uploadPath = Path.Combine(_environment.WebRootPath, _configuration["ImageSettings:UploadPath"] ?? "uploads");
-            var thumbnailPath = Path.Combine(_environment.WebRootPath, _configuration["ImageSettings:ThumbnailPath"] ?? "thumbnails");
-
-            // Ensure directories exist
-            Directory.CreateDirectory(uploadPath);
-            Directory.CreateDirectory(thumbnailPath);
-
-            var filePath = Path.Combine(uploadPath, fileName);
-
-            // Save original file
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
+            var thumbnailFileName = $"thumb_{fileName}";
 
             // Get image dimensions and create thumbnail
             int width = 0, height = 0;
             try
             {
-                using (var image = await Image.LoadAsync(filePath))
+                using (var imageStream = file.OpenReadStream())
+                using (var image = await Image.LoadAsync(imageStream))
                 {
                     width = image.Width;
                     height = image.Height;
 
-                    // Create thumbnail
-                    var thumbnailFileName = $"thumb_{fileName}";
-                    var thumbnailFilePath = Path.Combine(thumbnailPath, thumbnailFileName);
-
+                    // Create thumbnail in memory
                     using (var thumbnail = image.Clone(x => x.Resize(new ResizeOptions
                     {
                         Size = new Size(200, 200),
                         Mode = ResizeMode.Max
                     })))
+                    using (var thumbnailStream = new MemoryStream())
                     {
-                        await thumbnail.SaveAsync(thumbnailFilePath);
+                        await thumbnail.SaveAsync(thumbnailStream, image.Metadata.DecodedImageFormat!);
+                        thumbnailStream.Position = 0;
+
+                        // Upload thumbnail to S3
+                        var thumbnailFormFile = new FormFile(thumbnailStream, 0, thumbnailStream.Length, "thumbnail", thumbnailFileName)
+                        {
+                            Headers = new HeaderDictionary(),
+                            ContentType = file.ContentType
+                        };
+                        await _s3StorageService.UploadFileAsync(thumbnailFormFile, thumbnailFileName);
                     }
                 }
+
+                // Upload original file to S3
+                await _s3StorageService.UploadFileAsync(file, fileName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing image {FileName}", fileName);
-                // Clean up the uploaded file if image processing fails
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                }
                 throw new InvalidOperationException("Invalid image file", ex);
             }
 
@@ -174,30 +170,15 @@ namespace PicBed.Services
             return true;
         }
 
-        public Task<Stream?> GetImageStreamAsync(string fileName)
+        public async Task<Stream?> GetImageStreamAsync(string fileName)
         {
-            var uploadPath = Path.Combine(_environment.WebRootPath, _configuration["ImageSettings:UploadPath"] ?? "uploads");
-            var filePath = Path.Combine(uploadPath, fileName);
-
-            if (!File.Exists(filePath))
-            {
-                return Task.FromResult<Stream?>(null);
-            }
-
-            return Task.FromResult<Stream?>(new FileStream(filePath, FileMode.Open, FileAccess.Read));
+            return await _s3StorageService.GetFileStreamAsync(fileName);
         }
 
-        public Task<Stream?> GetThumbnailStreamAsync(string fileName, int width = 200, int height = 200)
+        public async Task<Stream?> GetThumbnailStreamAsync(string fileName, int width = 200, int height = 200)
         {
-            var thumbnailPath = Path.Combine(_environment.WebRootPath, _configuration["ImageSettings:ThumbnailPath"] ?? "thumbnails");
-            var thumbnailFilePath = Path.Combine(thumbnailPath, $"thumb_{fileName}");
-
-            if (!File.Exists(thumbnailFilePath))
-            {
-                return Task.FromResult<Stream?>(null);
-            }
-
-            return Task.FromResult<Stream?>(new FileStream(thumbnailFilePath, FileMode.Open, FileAccess.Read));
+            var thumbnailFileName = $"thumb_{fileName}";
+            return await _s3StorageService.GetFileStreamAsync(thumbnailFileName);
         }
 
         public async Task<int> GetUserImageCountAsync(int userId)

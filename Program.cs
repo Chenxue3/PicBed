@@ -3,6 +3,7 @@ using PicBed.Data;
 using PicBed.Services;
 using PicBed.Middleware;
 using PicBed.Models;
+using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,23 @@ builder.Services.AddSwaggerGen();
 // Add Entity Framework
 builder.Services.AddDbContext<PicBedDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add AWS S3 services (optional for development)
+var awsAccessKey = builder.Configuration["AWS:AccessKey"];
+var awsSecretKey = builder.Configuration["AWS:SecretKey"];
+
+if (!string.IsNullOrEmpty(awsAccessKey) && awsAccessKey != "test-access-key" &&
+    !string.IsNullOrEmpty(awsSecretKey) && awsSecretKey != "test-secret-key")
+{
+    builder.Services.AddAWSService<IAmazonS3>();
+}
+else
+{
+    // Register a null S3 client for development
+    builder.Services.AddSingleton<IAmazonS3>(provider => null!);
+}
+
+builder.Services.AddScoped<IS3StorageService, S3StorageService>();
 
 // Add custom services
 builder.Services.AddScoped<IImageService, ImageService>();

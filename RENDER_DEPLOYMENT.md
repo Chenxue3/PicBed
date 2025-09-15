@@ -50,6 +50,10 @@ Render 是一个优秀的免费部署平台，支持 .NET 应用程序。
    ImageSettings__AllowedExtensions__3=.gif
    ImageSettings__AllowedExtensions__4=.webp
    ADMIN_PASSWORD=your_secure_admin_password_here
+   AWS__AccessKey=your_aws_access_key
+   AWS__SecretKey=your_aws_secret_key
+   AWS__Region=us-east-1
+   AWS__S3BucketName=your-s3-bucket-name
    ```
 
 4. **高级设置**：
@@ -70,6 +74,23 @@ Render 是一个优秀的免费部署平台，支持 .NET 应用程序。
    - 用户名: `admin`
    - 密码: 你设置的环境变量 `ADMIN_PASSWORD` 的值
    - 如果没有设置环境变量，默认密码是 `admin123`
+
+## ☁️ AWS S3 配置
+
+### 重要说明
+PicBed 现在使用 AWS S3 进行图片存储，确保数据持久化。部署前需要：
+
+1. **创建 AWS S3 存储桶**
+2. **设置 IAM 用户和权限**
+3. **配置环境变量**
+
+详细设置步骤请参考：[AWS S3 设置指南](./AWS_S3_SETUP.md)
+
+### 必需的环境变量
+- `AWS__AccessKey`: AWS 访问密钥 ID
+- `AWS__SecretKey`: AWS 秘密访问密钥  
+- `AWS__Region`: AWS 区域 (如 us-east-1)
+- `AWS__S3BucketName`: S3 存储桶名称
 
 ## 🔒 安全说明
 
