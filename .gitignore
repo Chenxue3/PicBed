@@ -173,6 +173,9 @@ publish/
 # in these files may be visible to others.
 *.azurePubxml
 
+TECHNICAL_DOCUMENTATION.md
+RAILWAY_DEPLOYMENT.md
+
 # Microsoft Azure Build Output
 csx/
 *.build.csdef
