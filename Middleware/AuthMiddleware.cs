@@ -55,7 +55,6 @@ namespace PicBed.Middleware
                 "/swagger",
                 "/index.html",
                 "/",
-                "/api/images",
                 "/api/images/file/",
                 "/api/images/thumbnail/"
             };
