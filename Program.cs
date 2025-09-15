@@ -4,6 +4,9 @@ using PicBed.Services;
 using PicBed.Middleware;
 using PicBed.Models;
 using Amazon.S3;
+using Amazon;
+using Amazon.Extensions.NETCore.Setup;
+using Amazon.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,10 +26,20 @@ builder.Services.AddDbContext<PicBedDbContext>(options =>
 // Add AWS S3 services (optional for development)
 var awsAccessKey = builder.Configuration["AWS:AccessKey"];
 var awsSecretKey = builder.Configuration["AWS:SecretKey"];
+var awsRegion = builder.Configuration["AWS:Region"]; // mapped from AWS__Region
 
 if (!string.IsNullOrEmpty(awsAccessKey) && awsAccessKey != "test-access-key" &&
     !string.IsNullOrEmpty(awsSecretKey) && awsSecretKey != "test-secret-key")
 {
+    // Build AWSOptions from configuration and explicit credentials
+    var awsOptions = builder.Configuration.GetAWSOptions();
+    awsOptions.Credentials = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
+    if (!string.IsNullOrWhiteSpace(awsRegion))
+    {
+        awsOptions.Region = RegionEndpoint.GetBySystemName(awsRegion);
+    }
+
+    builder.Services.AddDefaultAWSOptions(awsOptions);
     builder.Services.AddAWSService<IAmazonS3>();
 }
 else
