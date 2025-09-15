@@ -9,11 +9,13 @@ namespace PicBed.Controllers
     public class ImagesController : ControllerBase
     {
         private readonly IImageService _imageService;
+        private readonly IAuthService _authService;
         private readonly ILogger<ImagesController> _logger;
 
-        public ImagesController(IImageService imageService, ILogger<ImagesController> logger)
+        public ImagesController(IImageService imageService, IAuthService authService, ILogger<ImagesController> logger)
         {
             _imageService = imageService;
+            _authService = authService;
             _logger = logger;
         }
 
@@ -37,7 +39,32 @@ namespace PicBed.Controllers
                     return BadRequest("No file uploaded");
                 }
 
-                var imageInfo = await _imageService.UploadImageAsync(file, description, category);
+                // Get current user from token
+                var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Unauthorized("Authentication required");
+                }
+
+                var user = await _authService.GetUserByTokenAsync(token);
+                if (user == null)
+                {
+                    return Unauthorized("Invalid token");
+                }
+
+                // Check upload limit for non-admin users
+                if (user.Username != "admin")
+                {
+                    var currentImageCount = await _imageService.GetUserImageCountAsync(user.Id);
+                    if (currentImageCount >= 1)
+                    {
+                        return BadRequest(new { 
+                            message = "Upload limit reached. You can only upload 1 image. For more uploads, please contact xueshanchen1122@gmail.com to request additional permissions." 
+                        });
+                    }
+                }
+
+                var imageInfo = await _imageService.UploadImageAsync(file, user.Id, description, category);
                 return Ok(imageInfo);
             }
             catch (ArgumentException ex)

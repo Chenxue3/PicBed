@@ -66,13 +66,17 @@ using (var scope = app.Services.CreateScope())
         // Ensure database is created
         context.Database.EnsureCreated();
         
-        // Seed default user if no users exist
-        if (!context.Users.Any())
+        // Create admin user if it doesn't exist
+        var adminUser = context.Users.FirstOrDefault(u => u.Username == "admin");
+        if (adminUser == null)
         {
+            // Get admin password from environment variable or use default
+            var adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "admin123";
+            
             var defaultUser = new User
             {
                 Username = "admin",
-                PasswordHash = HashPassword("0507cptbtptp"),
+                PasswordHash = HashPassword(adminPassword),
                 Email = "admin@picbed.com",
                 CreatedAt = DateTime.UtcNow,
                 LastLoginAt = DateTime.UtcNow,

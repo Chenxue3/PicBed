@@ -50,6 +50,7 @@ namespace PicBed.Middleware
             var skipPaths = new[]
             {
                 "/api/auth/login",
+                "/api/auth/register",
                 "/api/auth/validate",
                 "/swagger",
                 "/index.html",

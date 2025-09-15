@@ -27,3 +27,5 @@ services:
         value: .gif
       - key: ImageSettings__AllowedExtensions__4
         value: .webp
+      - key: ADMIN_PASSWORD
+        value: "your_secure_admin_password_here"

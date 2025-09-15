@@ -48,6 +48,36 @@ namespace PicBed.Controllers
         }
 
         /// <summary>
+        /// User registration
+        /// </summary>
+        /// <param name="request">Registration information</param>
+        /// <returns>Registration response with token</returns>
+        [HttpPost("register")]
+        public async Task<ActionResult<LoginResponse>> Register([FromBody] RegisterRequest request)
+        {
+            try
+            {
+                var result = await _authService.RegisterAsync(request);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during registration");
+                return StatusCode(500, new LoginResponse
+                {
+                    Success = false,
+                    Message = "Internal server error"
+                });
+            }
+        }
+
+        /// <summary>
         /// Validate token
         /// </summary>
         /// <returns>Token validation result</returns>

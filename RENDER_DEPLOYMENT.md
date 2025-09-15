@@ -49,6 +49,7 @@ Render 是一个优秀的免费部署平台，支持 .NET 应用程序。
    ImageSettings__AllowedExtensions__2=.png
    ImageSettings__AllowedExtensions__3=.gif
    ImageSettings__AllowedExtensions__4=.webp
+   ADMIN_PASSWORD=your_secure_admin_password_here
    ```
 
 4. **高级设置**：
@@ -65,9 +66,22 @@ Render 是一个优秀的免费部署平台，支持 .NET 应用程序。
 
 1. **部署完成后，Render 会提供一个 URL**
 2. **格式类似**: `https://picbed-xxxx.onrender.com`
-3. **使用默认凭据登录**：
+3. **使用 admin 账户登录**：
    - 用户名: `admin`
-   - 密码: `0507cptbtptp`
+   - 密码: 你设置的环境变量 `ADMIN_PASSWORD` 的值
+   - 如果没有设置环境变量，默认密码是 `admin123`
+
+## 🔒 安全说明
+
+### Admin 密码设置
+- **重要**: 请务必设置一个强密码作为 `ADMIN_PASSWORD` 环境变量
+- **不要使用默认密码**: 默认密码 `admin123` 仅用于开发环境
+- **生产环境**: 必须设置复杂的环境变量密码
+
+### 密码建议
+- 至少 12 个字符
+- 包含大小写字母、数字和特殊字符
+- 例如: `MySecure@Pass123!`
 
 ## 🔧 故障排除
 

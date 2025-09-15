@@ -25,11 +25,18 @@
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div class="container mx-auto px-4 py-6" x-data="picBedApp()">
-        <!-- Login Modal -->
+        <!-- Login/Register Modal -->
         <div x-show="showLogin" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Login to PicBed</h2>
-                <form @submit.prevent="login()">
+                <div class="flex justify-center mb-4">
+                    <button @click="isRegisterMode = false" :class="!isRegisterMode ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-4 py-2 rounded-l-md transition-colors">Login</button>
+                    <button @click="isRegisterMode = true" :class="isRegisterMode ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'" class="px-4 py-2 rounded-r-md transition-colors">Register</button>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center" x-text="isRegisterMode ? 'Register to PicBed' : 'Login to PicBed'"></h2>
+                
+                <!-- Login Form -->
+                <form x-show="!isRegisterMode" @submit.prevent="login()">
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
                         <input type="text" x-model="loginForm.username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -42,6 +49,28 @@
                         <button type="submit" :disabled="loggingIn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
                             <span x-show="!loggingIn">Login</span>
                             <span x-show="loggingIn">Logging in...</span>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Register Form -->
+                <form x-show="isRegisterMode" @submit.prevent="register()">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                        <input type="text" x-model="registerForm.username" required minlength="3" maxlength="50" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" x-model="registerForm.email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" x-model="registerForm.password" required minlength="6" maxlength="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="submit" :disabled="registering" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50">
+                            <span x-show="!registering">Register</span>
+                            <span x-show="registering">Registering...</span>
                         </button>
                     </div>
                 </form>
@@ -267,11 +296,18 @@
                 // Authentication
                 isLoggedIn: false,
                 showLogin: true,
+                isRegisterMode: false,
                 currentUser: null,
                 authToken: null,
                 loggingIn: false,
+                registering: false,
                 loginForm: {
                     username: '',
+                    password: ''
+                },
+                registerForm: {
+                    username: '',
+                    email: '',
                     password: ''
                 },
 
@@ -356,6 +392,41 @@
                     }
                 },
 
+                async register() {
+                    this.registering = true;
+                    try {
+                        const response = await fetch('/api/auth/register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.registerForm)
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            this.authToken = result.token;
+                            this.currentUser = result.user;
+                            this.isLoggedIn = true;
+                            this.showLogin = false;
+                            
+                            localStorage.setItem('authToken', result.token);
+                            this.showToast('Registration successful!', 'success');
+                            this.loadImages();
+                            
+                            // Reset register form
+                            this.registerForm = { username: '', email: '', password: '' };
+                        } else {
+                            this.showToast(result.message || 'Registration failed', 'error');
+                        }
+                    } catch (error) {
+                        this.showToast('Registration failed. Please try again.', 'error');
+                    } finally {
+                        this.registering = false;
+                    }
+                },
+
                 logout() {
                     this.authToken = null;
                     this.currentUser = null;
@@ -429,7 +500,8 @@
                             if (response.ok) {
                                 return await response.json();
                             } else {
-                                throw new Error('Upload failed');
+                                const errorData = await response.json().catch(() => ({}));
+                                throw new Error(errorData.message || 'Upload failed');
                             }
                         } catch (error) {
                             console.error('Upload error:', error);
@@ -548,5 +620,12 @@
             }
         }
     </script>
+    
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-gray-500 text-sm">
+        <p>&copy; 2024 PicBed. All rights reserved. | 
+           <a href="https://chenxue3.github.io/" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Visit Developer's Website</a>
+        </p>
+    </footer>
 </body>
 </html>

@@ -38,5 +38,7 @@ namespace PicBed.Models
         public string? Category { get; set; }
         
         public bool IsPublic { get; set; } = true;
+        
+        public int UserId { get; set; }
     }
 }

@@ -70,6 +70,71 @@ namespace PicBed.Services
             }
         }
 
+        public async Task<LoginResponse> RegisterAsync(RegisterRequest request)
+        {
+            try
+            {
+                // Check if username already exists
+                var existingUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username == request.Username);
+                
+                if (existingUser != null)
+                {
+                    return new LoginResponse
+                    {
+                        Success = false,
+                        Message = "Username already exists"
+                    };
+                }
+
+                // Check if email already exists
+                var existingEmail = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == request.Email);
+                
+                if (existingEmail != null)
+                {
+                    return new LoginResponse
+                    {
+                        Success = false,
+                        Message = "Email already exists"
+                    };
+                }
+
+                // Create new user
+                var newUser = new User
+                {
+                    Username = request.Username,
+                    Email = request.Email,
+                    PasswordHash = HashPassword(request.Password),
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                var token = GenerateToken(newUser);
+
+                return new LoginResponse
+                {
+                    Success = true,
+                    Token = token,
+                    User = newUser,
+                    Message = "Registration successful"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during registration for user {Username}", request.Username);
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "An error occurred during registration"
+                };
+            }
+        }
+
         public async Task<bool> ValidateTokenAsync(string token)
         {
             try

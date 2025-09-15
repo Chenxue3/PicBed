@@ -25,7 +25,7 @@ namespace PicBed.Services
             _logger = logger;
         }
 
-        public async Task<ImageRecord> UploadImageAsync(IFormFile file, string? description = null, string? category = null)
+        public async Task<ImageRecord> UploadImageAsync(IFormFile file, int userId, string? description = null, string? category = null)
         {
             // Validate file
             var maxFileSize = _configuration.GetValue<long>("ImageSettings:MaxFileSize", 10485760); // 10MB
@@ -106,7 +106,8 @@ namespace PicBed.Services
                 MimeType = file.ContentType,
                 Description = description,
                 Category = category,
-                UploadTime = DateTime.UtcNow
+                UploadTime = DateTime.UtcNow,
+                UserId = userId
             };
 
             _context.Images.Add(imageInfo);
@@ -197,6 +198,11 @@ namespace PicBed.Services
             }
 
             return Task.FromResult<Stream?>(new FileStream(thumbnailFilePath, FileMode.Open, FileAccess.Read));
+        }
+
+        public async Task<int> GetUserImageCountAsync(int userId)
+        {
+            return await _context.Images.CountAsync(i => i.UserId == userId);
         }
     }
 }
